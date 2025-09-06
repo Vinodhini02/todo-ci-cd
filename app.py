@@ -4,6 +4,17 @@ from datetime import datetime
 
 db = SQLAlchemy()
 
+# ✅ Define Task model globally (not inside create_app)
+class Task(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    done = db.Column(db.Boolean, default=False, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {"id": self.id, "title": self.title, "done": self.done}
+
+
 def create_app(testing=False, database_uri=None):
     app = Flask(__name__, static_folder="public", static_url_path="")
     app.config["SQLALCHEMY_DATABASE_URI"] = database_uri or "sqlite:///todo.db"
@@ -13,18 +24,10 @@ def create_app(testing=False, database_uri=None):
 
     db.init_app(app)
 
-    class Task(db.Model):
-        id = db.Column(db.Integer, primary_key=True)
-        title = db.Column(db.String(200), nullable=False)
-        done = db.Column(db.Boolean, default=False, nullable=False)
-        created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-        def to_dict(self):
-            return {"id": self.id, "title": self.title, "done": self.done}
-
     with app.app_context():
         db.create_all()
 
+    # ------------------ Routes ------------------
     @app.get("/api/health")
     def health():
         return {"status": "ok"}, 200
@@ -67,10 +70,10 @@ def create_app(testing=False, database_uri=None):
     def root():
         return send_from_directory(app.static_folder, "index.html")
 
-    app.Task = Task
     return app
 
-app = create_app()
 
+# ✅ Only run server if script is executed directly
 if __name__ == "__main__":
+    app = create_app()
     app.run(host="0.0.0.0", port=8000)
