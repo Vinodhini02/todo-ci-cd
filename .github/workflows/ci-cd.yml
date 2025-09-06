@@ -13,7 +13,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r requirements.txt
-      - run: test_app.py -q
+      - run: pytest -q
 
   build-and-push:
     needs: test
