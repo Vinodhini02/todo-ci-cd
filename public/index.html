@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>To-Do App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 2rem auto; }
+    li { display:flex; align-items:center; gap:.5rem; margin:.3rem 0; }
+    button { cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>To-Do</h1>
+  <form id="form">
+    <input id="title" placeholder="New task..." required />
+    <button>Add</button>
+  </form>
+  <ul id="list"></ul>
+
+  <script>
+    const list = document.getElementById("list");
+    const form = document.getElementById("form");
+    const title = document.getElementById("title");
+
+    async function fetchTasks() {
+      const res = await fetch("/api/tasks");
+      const tasks = await res.json();
+      list.innerHTML = "";
+      tasks.forEach(t => {
+        const li = document.createElement("li");
+        const chk = document.createElement("input");
+        chk.type = "checkbox"; chk.checked = t.done;
+        chk.onchange = () => updateTask(t.id, { done: chk.checked });
+        const span = document.createElement("span");
+        span.textContent = t.title;
+        if (t.done) span.style.textDecoration = "line-through";
+        const del = document.createElement("button");
+        del.textContent = "delete";
+        del.onclick = () => deleteTask(t.id);
+        li.append(chk, span, del);
+        list.append(li);
+      });
+    }
+
+    async function addTask(title) {
+      await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title })
+      });
+      fetchTasks();
+    }
+
+    async function updateTask(id, body) {
+      await fetch(/api/tasks/${id}, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      fetchTasks();
+    }
+
+    async function deleteTask(id) {
+      await fetch(/api/tasks/${id}, { method: "DELETE" });
+      fetchTasks();
+    }
+
+    form.onsubmit = (e) => { e.preventDefault(); addTask(title.value); title.value=""; };
+    fetchTasks();
+  </script>
+</body>
+</html>
